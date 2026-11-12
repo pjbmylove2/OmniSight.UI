@@ -18,6 +18,7 @@ namespace OmniSight.UI.Demo
 
         public static void RunChecks()
         {
+            CheckDesignerDefaults();
             CheckPalette();
             CheckEdgePixels();
             CheckNoRedundantInvalidate();
@@ -25,7 +26,36 @@ namespace OmniSight.UI.Demo
             CheckDialogResultAndToggle();
             CheckDesignMode();
             CheckLeaks();
-            Console.WriteLine("PASS: palette, edge pixels (3 variants x 5 states x 2 themes x 2 sizes), redundant invalidate, input, dialog result and toggle, design mode, leaks");
+            Console.WriteLine("PASS: designer defaults, palette, edge pixels (3 variants x 5 states x 2 themes x 2 sizes), redundant invalidate, input, dialog result and toggle, design mode, leaks");
+        }
+
+        // 디자이너는 ShouldSerializeValue가 true인 속성만 Designer.cs에 쓴다. 생성자가 기본값과 다른 값을
+        // 지정하면 모든 소비 프로젝트에 그 값이 박히므로, 손대지 않은 버튼은 아무것도 쓰지 않아야 한다.
+        private static void CheckDesignerDefaults()
+        {
+            using (var button = new SquareButton())
+            {
+                var properties = System.ComponentModel.TypeDescriptor.GetProperties(button);
+                foreach (string name in new[] { "Font", "BackColor", "ForeColor", "Cursor", "AccessibleRole", "TabStop", "Variant", "Theme", "IsToggle", "Checked", "Image", "TextAlign", "DialogResult" })
+                {
+                    System.ComponentModel.PropertyDescriptor property = properties[name];
+                    Require(property != null, "property exists: " + name);
+                    Require(!property.ShouldSerializeValue(button), "untouched button must not serialize " + name);
+                }
+                button.Text = "버튼";
+                Require(properties["Text"].ShouldSerializeValue(button), "Text set by the user is serialized");
+                button.Variant = SquareButtonVariant.Danger;
+                Require(properties["Variant"].ShouldSerializeValue(button), "Variant set by the user is serialized");
+                Require(button.AccessibilityObject.Role == AccessibleRole.PushButton, "screen readers still see a push button");
+            }
+
+            // 글꼴은 부모를 따라가야 한다.
+            using (var parent = new Panel { Font = new Font("Segoe UI", 13F) })
+            using (var button = new SquareButton())
+            {
+                parent.Controls.Add(button);
+                Require(Math.Abs(button.Font.Size - 13F) < 0.01F, "font follows the parent (" + button.Font.Size + ")");
+            }
         }
 
         public static void RunCapture(string directory)
