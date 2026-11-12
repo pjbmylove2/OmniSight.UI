@@ -44,8 +44,8 @@ namespace OmniSight.UI.Demo
             DeviceLinkState.Disabled, DeviceLinkState.Connecting, DeviceLinkState.Connected,
             DeviceLinkState.Warning, DeviceLinkState.Fault, DeviceLinkState.Lost
         };
-        private readonly DemoSection _dark = new DemoSection(DeviceStatusTheme.Dark, false);
-        private readonly DemoSection _light = new DemoSection(DeviceStatusTheme.Light, false);
+        private readonly DemoSection _dark = new DemoSection(UiTheme.Dark, false);
+        private readonly DemoSection _light = new DemoSection(UiTheme.Light, false);
         private int _step;
 
         public DemoForm()

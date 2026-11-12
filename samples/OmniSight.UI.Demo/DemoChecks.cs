@@ -22,13 +22,36 @@ namespace OmniSight.UI.Demo
 
         public static void RunChecks()
         {
+            CheckVs2022Palette();
             CheckChipRendering();
             CheckNoRedundantInvalidate();
             CheckRegistryDemotion();
             CheckThreadSafety();
             CheckDesignMode();
             CheckLeaks();
-            Console.WriteLine("PASS: chip rendering (6 states x 2 themes), redundant invalidate, registry demotion, thread safety, design mode, leaks");
+            Console.WriteLine("PASS: VS2022 palette, chip rendering (6 states x 2 themes), redundant invalidate, registry demotion, thread safety, design mode, leaks");
+        }
+
+        // VS2022 테마 파일(Theme.Dark/Light.pkgdef)에서 읽은 값을 그대로 대조한다.
+        private static void CheckVs2022Palette()
+        {
+            var dark = new DeviceStatusPalette(UiTheme.Dark);
+            var light = new DeviceStatusPalette(UiTheme.Light);
+            Require(Same(dark.Shell, Color.FromArgb(0x1f, 0x1f, 0x1f)), "dark ToolWindowBackground #1f1f1f");
+            Require(Same(dark.Surface, Color.FromArgb(0x3d, 0x3d, 0x3d)), "dark Button #3d3d3d");
+            Require(Same(dark.Hover, Color.FromArgb(0x4d, 0x4d, 0x4d)), "dark ButtonHover #4d4d4d");
+            Require(Same(dark.SelectedBorder, Color.FromArgb(0x99, 0x99, 0x99)), "dark ButtonBorderFocused #999999");
+            Require(Same(dark.Ok, Color.FromArgb(0x6c, 0xcb, 0x5f)), "dark success #6ccb5f");
+            Require(Same(dark.Error, Color.FromArgb(0xff, 0x99, 0xa4)), "dark error #ff99a4");
+            Require(Same(dark.Popup, Color.FromArgb(0x24, 0x24, 0x24)), "dark WindowPanel #242424");
+            Require(Same(light.Shell, Color.FromArgb(0xf5, 0xf5, 0xf5)), "light ToolWindowBackground #f5f5f5");
+            Require(Same(light.Surface, Color.FromArgb(0xec, 0xec, 0xf0)), "light Button #ececf0");
+            Require(Same(light.Edge, Color.FromArgb(0xac, 0xac, 0xac)), "light ButtonBorder #acacac");
+            Require(Same(light.Hover, Color.FromArgb(0xc9, 0xde, 0xf5)), "light ButtonHover #c9def5");
+            Require(Same(light.HoverBorder, Color.FromArgb(0x00, 0x6c, 0xbe)), "light ButtonBorderHover #006cbe");
+            Require(Same(light.Ok, Color.FromArgb(0x2e, 0x7d, 0x32)), "light success #2e7d32");
+            Require(Same(light.Error, Color.FromArgb(0xd5, 0x32, 0x30)), "light error #d53230");
+            Require(Same(light.Popup, Color.FromArgb(0xfb, 0xfb, 0xfb)), "light WindowPanel #fbfbfb");
         }
 
         public static void RunCapture(string directory)
@@ -38,8 +61,8 @@ namespace OmniSight.UI.Demo
             {
                 using (var host = new Panel { Size = new Size(large ? 2560 : 1920, 0) })
                 {
-                    var dark = new DemoSection(DeviceStatusTheme.Dark, large);
-                    var light = new DemoSection(DeviceStatusTheme.Light, large);
+                    var dark = new DemoSection(UiTheme.Dark, large);
+                    var light = new DemoSection(UiTheme.Light, large);
                     host.Controls.Add(light);
                     host.Controls.Add(dark);
                     host.Height = dark.Height + light.Height;
@@ -92,7 +115,7 @@ namespace OmniSight.UI.Demo
             }
         }
 
-        private static DeviceStatusChip NewChip(DeviceStatusTheme theme, DeviceLinkState state, int height)
+        private static DeviceStatusChip NewChip(UiTheme theme, DeviceLinkState state, int height)
         {
             var chip = new DeviceStatusChip
             {
@@ -107,7 +130,7 @@ namespace OmniSight.UI.Demo
 
         private static void CheckChipRendering()
         {
-            foreach (DeviceStatusTheme theme in new[] { DeviceStatusTheme.Dark, DeviceStatusTheme.Light })
+            foreach (UiTheme theme in new[] { UiTheme.Dark, UiTheme.Light })
             {
                 var palette = new DeviceStatusPalette(theme);
                 foreach (int height in new[] { 28, 36 })
@@ -149,7 +172,7 @@ namespace OmniSight.UI.Demo
             // 화면 밖의 창은 WM_PAINT를 받지 못하므로, 거의 투명하게 화면 안에 잠깐 띄워서 Paint 횟수를 센다.
             using (var host = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(0, 0), Opacity = 0.01, Size = new Size(200, 100) })
             {
-                DeviceStatusChip chip = NewChip(DeviceStatusTheme.Dark, DeviceLinkState.Connected, 28);
+                DeviceStatusChip chip = NewChip(UiTheme.Dark, DeviceLinkState.Connected, 28);
                 host.Controls.Add(chip);
                 host.Show();
                 Application.DoEvents();
@@ -271,7 +294,7 @@ namespace OmniSight.UI.Demo
                     {
                         string id = DemoSection.DeviceIds[random.Next(DemoSection.DeviceIds.Length)];
                         strip.Registry.Report(id, (DeviceLinkState)random.Next(6), null, random.Next(500));
-                        if (i % 5 == 0) { strip.Theme = strip.Theme == DeviceStatusTheme.Dark ? DeviceStatusTheme.Light : DeviceStatusTheme.Dark; }
+                        if (i % 5 == 0) { strip.Theme = strip.Theme == UiTheme.Dark ? UiTheme.Light : UiTheme.Dark; }
                         strip.RefreshStatus();
                         host.Update();
                         if (i % 50 == 0)

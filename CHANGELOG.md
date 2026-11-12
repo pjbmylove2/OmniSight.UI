@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+- `DeviceStatusStrip`의 색을 VS2022 다크·라이트 테마 값으로 교체(Theme.Dark/Light.pkgdef에서 읽은 값)
+- 호환성 변경: `DeviceStatusTheme`을 없애고 `UiTheme`(`SquareButton`과 공용)을 쓴다. `DeviceStatusPalette`의 `AccentBack`은 `Hover`·`Selected`로 나뉘고 `PopupList`·`PopupBorder` 등이 추가됨
+- 상세 팝업의 재연결 버튼을 `SquareButton`으로 교체(내부용 `PopupButton` 삭제)
+- 칩에 마우스를 올리면 VS의 ButtonHover 색으로 바뀜
+
 ## 0.3.0
 - `SquareButton` 추가: VS2022 다크·라이트 테마 색을 쓰는 각진 버튼. 변형(기본·기본 동작·위험), 5가지 상태, 토글, `IButtonControl`(`DialogResult`, `AcceptButton`)
 - `SquareButtonPalette`, `UiTheme`, `SquareButtonVariant`, `SquareButtonState` 추가
