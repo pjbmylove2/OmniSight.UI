@@ -6,6 +6,13 @@ OmniSight 계열 프로젝트가 공용으로 사용하는 WinForms 커스텀 UI
 - `src/OmniSight.UI` : 라이브러리 (net9.0-windows, net472 멀티타깃)
 - `samples/OmniSight.UI.Demo` : 컨트롤 확인용 데모 앱
 
+## 컨트롤
+- `ThemedButton` : Theme 색을 쓰는 플랫 버튼(파이프라인 검증용 샘플)
+- `SquareButton` : VS2022 다크·라이트 테마 색을 쓰는 각진 버튼(기본·기본 동작·위험, 토글, `DialogResult`). 사용법·색 표·크기 조절·결과 화면은 [docs/SquareButton.md](docs/SquareButton.md)
+
+## 테마 색
+모든 사용자 정의 컨트롤의 다크·라이트 색은 Visual Studio 2022 테마 색을 따른다.
+
 ## 빌드
 ```
 dotnet build OmniSight.UI.sln -c Release

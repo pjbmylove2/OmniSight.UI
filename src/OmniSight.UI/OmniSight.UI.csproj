@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>OmniSight.UI</RootNamespace>
     <AssemblyName>OmniSight.UI</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.3.0</Version>
     <Company>OmniSight</Company>
     <Description>OmniSight WinForms custom UI control library</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
