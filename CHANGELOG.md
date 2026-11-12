@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.0
+- `SquareButton.Image`가 버튼 높이의 절반 칸에 비율을 유지하며 맞춰지도록 변경(전에는 원본 크기 그대로 그림). 호환성 변경: 큰 이미지는 줄어들고 작은 이미지는 늘어난다
+- `SquareButton.ImageSize` 추가(0이면 자동, 아니면 칸 크기 px)
+- 데모 `--check`에 이미지 크기·위치·세로 가운데, 이미지 없을 때 글자 가운데 검사 추가
+
 ## 0.6.0
 - `ImageViewer` 추가(별도 저장소 VisionImageViewer v0.1.0의 코어를 이식, 네임스페이스 `OmniSight.UI.Controls.Vision`): 외부 의존 없는 GDI 이미지 뷰어. 원시 버퍼 입력, 스레드 안전, 최신 프레임 우선, 확대·스크롤·검사 모드, 오버레이, 픽셀 값 이벤트, 파일 열기·저장
 - 문서 `docs/ImageViewer/`(사용법·구조·성능·타 라이브러리 연동). OpenCvSharp 어댑터는 이식하지 않음

@@ -26,6 +26,7 @@ namespace OmniSight.UI.Controls
         private SquareButtonVariant _variant = SquareButtonVariant.Default;
         private ContentAlignment _textAlign = ContentAlignment.MiddleCenter;
         private Image _image;
+        private int _imageSize;
         private bool _isToggle;
         private bool _checked;
         private bool _hover;
@@ -139,9 +140,13 @@ namespace OmniSight.UI.Controls
         [Category("OmniSight")]
         public event EventHandler CheckedChanged;
 
-        /// <summary>글자 앞에 그리는 아이콘.</summary>
+        /// <summary>
+        /// 글자 왼쪽에 그리는 이미지. 버튼 높이의 절반 칸(또는 <see cref="ImageSize"/>)에 비율을 유지한 채 맞춘다.
+        /// 이미지가 없으면 글자는 버튼 가운데에 놓인다(<see cref="TextAlign"/> 기본값).
+        /// </summary>
         [Category("OmniSight")]
         [DefaultValue(null)]
+        [Description("글자 왼쪽에 그리는 이미지. 버튼 높이의 절반 칸에 비율 유지로 자동 조절")]
         public Image Image
         {
             get { return _image; }
@@ -222,10 +227,34 @@ namespace OmniSight.UI.Controls
         {
             Size text = string.IsNullOrEmpty(Text) ? Size.Empty
                 : TextRenderer.MeasureText(Text, Font, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix);
-            int image = _image == null ? 0 : _image.Width + (text.Width > 0 ? 8 : 0);
+            int image = _image == null ? 0 : GetImageSize(Height > 0 ? Height : DefaultSize.Height).Width + (text.Width > 0 ? ImageGap : 0);
             int width = Padding.Horizontal + 24 + image + text.Width;
-            int height = Math.Max(text.Height + 12, _image == null ? 0 : _image.Height + 12);
+            int height = text.Height + 12;
             return new Size(Math.Max(width, 48), Math.Max(height, Height > 0 ? Height : 32));
+        }
+
+        private const int ImageGap = 8;
+
+        /// <summary>이미지가 들어가는 정사각 칸의 한 변(px). 0이면 버튼 높이의 절반(최소 8)으로 자동 정한다.</summary>
+        [Category("OmniSight")]
+        [DefaultValue(0)]
+        [Description("이미지 칸 크기(px). 0이면 버튼 높이의 절반으로 자동. 비율은 항상 유지")]
+        public int ImageSize
+        {
+            get { return _imageSize; }
+            set
+            {
+                if (value < 0) { throw new ArgumentOutOfRangeException(nameof(value)); }
+                if (_imageSize != value) { _imageSize = value; Invalidate(); }
+            }
+        }
+
+        private Size GetImageSize(int buttonHeight)
+        {
+            if (_image == null || _image.Width <= 0 || _image.Height <= 0) { return Size.Empty; }
+            int box = _imageSize > 0 ? _imageSize : Math.Max(8, buttonHeight / 2);
+            double scale = Math.Min((double)box / _image.Width, (double)box / _image.Height);
+            return new Size(Math.Max(1, (int)Math.Round(_image.Width * scale)), Math.Max(1, (int)Math.Round(_image.Height * scale)));
         }
 
         protected override void OnPaintBackground(PaintEventArgs e)
@@ -248,8 +277,16 @@ namespace OmniSight.UI.Controls
             int right = Width - Padding.Right - 12;
             if (_image != null)
             {
-                g.DrawImageUnscaled(_image, left, (Height - _image.Height) / 2);
-                left += _image.Width + 8;
+                Size size = GetImageSize(Height);
+                var target = new Rectangle(left, (Height - size.Height) / 2, size.Width, size.Height);
+                InterpolationMode interpolation = g.InterpolationMode;
+                PixelOffsetMode offset = g.PixelOffsetMode;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawImage(_image, target);
+                g.InterpolationMode = interpolation;
+                g.PixelOffsetMode = offset;
+                left += size.Width + ImageGap;
             }
 
             var bounds = new Rectangle(left, 0, Math.Max(0, right - left), Height);
