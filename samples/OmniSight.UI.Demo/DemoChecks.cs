@@ -4,7 +4,11 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using OmniSight.UI.Controls;
 
@@ -18,14 +22,13 @@ namespace OmniSight.UI.Demo
 
         public static void RunChecks()
         {
-            CheckPalette();
-            CheckEdgePixels();
+            CheckChipRendering();
             CheckNoRedundantInvalidate();
-            CheckInput();
-            CheckDialogResultAndToggle();
+            CheckRegistryDemotion();
+            CheckThreadSafety();
             CheckDesignMode();
             CheckLeaks();
-            Console.WriteLine("PASS: palette, edge pixels (3 variants x 5 states x 2 themes x 2 sizes), redundant invalidate, input, dialog result and toggle, design mode, leaks");
+            Console.WriteLine("PASS: chip rendering (6 states x 2 themes), redundant invalidate, registry demotion, thread safety, design mode, leaks");
         }
 
         public static void RunCapture(string directory)
@@ -33,77 +36,108 @@ namespace OmniSight.UI.Demo
             Directory.CreateDirectory(directory);
             foreach (bool large in new[] { false, true })
             {
-                foreach (UiTheme theme in new[] { UiTheme.Dark, UiTheme.Light })
+                using (var host = new Panel { Size = new Size(large ? 2560 : 1920, 0) })
                 {
-                    using (var showcase = new ButtonShowcase(theme, large))
+                    var dark = new DemoSection(DeviceStatusTheme.Dark, large);
+                    var light = new DemoSection(DeviceStatusTheme.Light, large);
+                    host.Controls.Add(light);
+                    host.Controls.Add(dark);
+                    host.Height = dark.Height + light.Height;
+                    Capture(host, Path.Combine(directory, large ? "DeviceStatusStrip-2560x1440.png" : "DeviceStatusStrip-1920x1080.png"));
+                    if (!large)
                     {
-                        string name = "SquareButton-" + (theme == UiTheme.Dark ? "dark" : "light") + (large ? "-2560x1440" : "-1920x1080") + ".png";
-                        using (var bitmap = new Bitmap(showcase.Width, showcase.Height))
-                        {
-                            showcase.DrawToBitmap(bitmap, new Rectangle(Point.Empty, showcase.Size));
-                            bitmap.Save(Path.Combine(directory, name), ImageFormat.Png);
-                        }
+                        PrimeHistory(dark.Strip);
+                        PrimeHistory(light.Strip);
+                        CapturePopup(dark.Strip, Path.Combine(directory, "DeviceStatusPopup-dark.png"));
+                        CapturePopup(light.Strip, Path.Combine(directory, "DeviceStatusPopup-light.png"));
                     }
                 }
             }
             Console.WriteLine("captured to " + directory);
         }
 
-        private static SquareButton NewButton(UiTheme theme, SquareButtonVariant variant, SquareButtonState? forced, int height)
+        // 팝업 캡처용으로 CAM 2에 상태 변경 이력을 남긴다(시각을 직접 지정해 결과가 일정하다).
+        private static void PrimeHistory(DeviceStatusStrip strip)
         {
-            return new SquareButton
+            DateTime t = DateTime.UtcNow.AddSeconds(-40);
+            strip.Registry.Report("cam2", DeviceLinkState.Connecting, null, null, t);
+            strip.Registry.Report("cam2", DeviceLinkState.Connected, null, 180, t.AddSeconds(8));
+            strip.Registry.Report("cam2", DeviceLinkState.Lost, "응답 없음", null, t.AddSeconds(20));
+            strip.Registry.Report("cam2", DeviceLinkState.Connecting, null, null, t.AddSeconds(26));
+            strip.Registry.Report("cam2", DeviceLinkState.Connected, null, 240, t.AddSeconds(30));
+            strip.Registry.Report("cam2", DeviceLinkState.Warning, "응답 지연", 420, DateTime.UtcNow.AddSeconds(-2));
+            strip.RefreshStatus();
+        }
+
+        private static void CapturePopup(DeviceStatusStrip strip, string path)
+        {
+            strip.ShowDetail("cam2");
+            Application.DoEvents();
+            DeviceStatusPopup popup = Application.OpenForms.OfType<DeviceStatusPopup>().First();
+            using (var bitmap = new Bitmap(popup.Width, popup.Height))
             {
-                Text = "버튼", Theme = theme, Variant = variant, ForcedState = forced,
-                Size = new Size(120, height)
+                popup.DrawToBitmap(bitmap, new Rectangle(Point.Empty, popup.Size));
+                bitmap.Save(path, ImageFormat.Png);
+            }
+            strip.CloseDetail();
+            Application.DoEvents();
+        }
+
+        private static void Capture(Control control, string path)
+        {
+            using (var bitmap = new Bitmap(control.Width, control.Height))
+            {
+                control.DrawToBitmap(bitmap, new Rectangle(Point.Empty, control.Size));
+                bitmap.Save(path, ImageFormat.Png);
+            }
+        }
+
+        private static DeviceStatusChip NewChip(DeviceStatusTheme theme, DeviceLinkState state, int height)
+        {
+            var chip = new DeviceStatusChip
+            {
+                DeviceName = "CAM 1",
+                Palette = new DeviceStatusPalette(theme),
+                State = state,
+                Height = height
             };
+            chip.Width = chip.GetPreferredSize(Size.Empty).Width;
+            return chip;
         }
 
-        // VS2022 테마 파일에서 읽은 값 몇 개를 그대로 대조한다.
-        private static void CheckPalette()
+        private static void CheckChipRendering()
         {
-            var dark = new SquareButtonPalette(UiTheme.Dark);
-            var light = new SquareButtonPalette(UiTheme.Light);
-            Require(Same(dark.Get(SquareButtonVariant.Default, SquareButtonState.Normal).Back, 0x3d3d3d), "dark Button #3d3d3d");
-            Require(Same(dark.Get(SquareButtonVariant.Default, SquareButtonState.Hover).Back, 0x4d4d4d), "dark ButtonHover #4d4d4d");
-            Require(Same(dark.Get(SquareButtonVariant.Default, SquareButtonState.Focused).Border, 0x999999), "dark ButtonBorderFocused #999999");
-            Require(Same(dark.Get(SquareButtonVariant.Primary, SquareButtonState.Normal).Back, 0x403582), "dark ButtonDefault #403582");
-            Require(Same(light.Get(SquareButtonVariant.Default, SquareButtonState.Normal).Back, 0xececf0), "light Button #ececf0");
-            Require(Same(light.Get(SquareButtonVariant.Default, SquareButtonState.Hover).Back, 0xc9def5), "light ButtonHover #c9def5");
-            Require(Same(light.Get(SquareButtonVariant.Default, SquareButtonState.Pressed).Back, 0x006cbe), "light ButtonPressed #006cbe");
-            Require(Same(light.Get(SquareButtonVariant.Primary, SquareButtonState.Normal).Border, 0x3399ff), "light ButtonBorderDefault #3399ff");
-        }
-
-        private static void CheckEdgePixels()
-        {
-            foreach (UiTheme theme in new[] { UiTheme.Dark, UiTheme.Light })
+            foreach (DeviceStatusTheme theme in new[] { DeviceStatusTheme.Dark, DeviceStatusTheme.Light })
             {
-                var palette = new SquareButtonPalette(theme);
-                foreach (int height in new[] { 32, 40 })
+                var palette = new DeviceStatusPalette(theme);
+                foreach (int height in new[] { 28, 36 })
                 {
-                    foreach (SquareButtonVariant variant in Enum.GetValues(typeof(SquareButtonVariant)))
+                    foreach (DeviceLinkState state in Enum.GetValues(typeof(DeviceLinkState)))
                     {
-                        foreach (SquareButtonState state in Enum.GetValues(typeof(SquareButtonState)))
+                        using (DeviceStatusChip chip = NewChip(theme, state, height))
+                        using (var bitmap = new Bitmap(chip.Width, chip.Height))
                         {
-                            // 부모를 눈에 띄는 마젠타로 두어, 가장자리에 부모 색이 비치는지 확인한다.
-                            using (var parent = new Panel { BackColor = Color.Magenta, Size = new Size(160, height + 20) })
-                            using (SquareButton button = NewButton(theme, variant, state, height))
+                            chip.DrawToBitmap(bitmap, new Rectangle(Point.Empty, chip.Size));
+                            Color border = state == DeviceLinkState.Fault || state == DeviceLinkState.Lost ? palette.Error : palette.Edge;
+                            foreach (Point corner in new[] { new Point(0, 0), new Point(chip.Width - 1, 0), new Point(0, chip.Height - 1), new Point(chip.Width - 1, chip.Height - 1) })
                             {
-                                button.Location = new Point(10, 10);
-                                parent.Controls.Add(button);
-                                using (var bitmap = new Bitmap(button.Width, button.Height))
-                                {
-                                    button.DrawToBitmap(bitmap, new Rectangle(Point.Empty, button.Size));
-                                    Color border = palette.Get(variant, state).Border;
-                                    foreach (Point corner in Corners(button.Size))
-                                    {
-                                        Color actual = bitmap.GetPixel(corner.X, corner.Y);
-                                        Require(Same(actual, border), $"edge {theme}/{variant}/{state}/{height} at {corner}: {actual} expected {border}");
-                                    }
-                                    Color back = palette.Get(variant, state).Back;
-                                    Color inner = bitmap.GetPixel(4, button.Height / 2);
-                                    Require(Same(inner, back), $"inner {theme}/{variant}/{state}/{height}: {inner} expected {back}");
-                                }
+                                Require(Same(bitmap.GetPixel(corner.X, corner.Y), border),
+                                    $"chip corner {theme}/{state}/{height} at {corner}: {bitmap.GetPixel(corner.X, corner.Y)}");
                             }
+
+                            int d = Math.Max(7, (int)(height * 0.32f));
+                            int cx = Math.Max(8, (int)(height * 0.33f)) + d / 2;
+                            Color center = bitmap.GetPixel(cx, height / 2);
+                            Color expected;
+                            switch (state)
+                            {
+                                case DeviceLinkState.Connected: expected = palette.Ok; break;
+                                case DeviceLinkState.Warning: expected = palette.WarnLamp; break;
+                                case DeviceLinkState.Fault:
+                                case DeviceLinkState.Lost: expected = palette.Error; break;
+                                default: expected = palette.Surface; break;
+                            }
+                            Require(Same(center, expected), $"lamp center {theme}/{state}/{height}: {center} expected {expected}");
                         }
                     }
                 }
@@ -112,84 +146,79 @@ namespace OmniSight.UI.Demo
 
         private static void CheckNoRedundantInvalidate()
         {
-            // 화면 밖 창은 WM_PAINT를 받지 못하므로 거의 투명하게 화면 안에 잠깐 띄워 Paint 횟수를 센다.
-            using (var host = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(0, 0), Opacity = 0.01, Size = new Size(240, 120) })
+            // 화면 밖의 창은 WM_PAINT를 받지 못하므로, 거의 투명하게 화면 안에 잠깐 띄워서 Paint 횟수를 센다.
+            using (var host = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(0, 0), Opacity = 0.01, Size = new Size(200, 100) })
             {
-                SquareButton button = NewButton(UiTheme.Dark, SquareButtonVariant.Default, null, 32);
-                host.Controls.Add(button);
+                DeviceStatusChip chip = NewChip(DeviceStatusTheme.Dark, DeviceLinkState.Connected, 28);
+                host.Controls.Add(chip);
                 host.Show();
                 Application.DoEvents();
-                button.Update();
+                chip.Update();
                 int paints = 0;
-                button.Paint += delegate { paints++; };
-                for (int i = 0; i < 100; i++)
-                {
-                    button.Variant = SquareButtonVariant.Default;
-                    button.Theme = UiTheme.Dark;
-                    button.TextAlign = ContentAlignment.MiddleCenter;
-                    button.ForcedState = null;
-                    button.Checked = false;
-                }
-                button.Update();
+                chip.Paint += delegate { paints++; };
+                for (int i = 0; i < 100; i++) { chip.State = DeviceLinkState.Connected; chip.Selected = false; chip.DeviceName = "CAM 1"; }
+                chip.Update();
                 Require(paints == 0, "same values must not repaint (" + paints + " paints)");
-                button.Variant = SquareButtonVariant.Danger;
-                button.Update();
-                Require(paints == 1, "one change must paint exactly once (" + paints + " paints)");
+                chip.State = DeviceLinkState.Fault;
+                chip.Update();
+                Require(paints == 1, "one state change must paint exactly once (" + paints + " paints)");
             }
         }
 
-        private static void CheckInput()
+        private static void CheckRegistryDemotion()
         {
-            using (var host = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-20000, 0) })
+            var registry = new DeviceStatusRegistry();
+            DateTime t = new DateTime(2026, 11, 12, 9, 0, 0, DateTimeKind.Utc);
+            registry.Report("a", DeviceLinkState.Connected, null, 100, t);
+            registry.Evaluate(t.AddSeconds(1));
+            Require(registry.GetInfo("a").State == DeviceLinkState.Connected, "fresh response stays connected");
+            registry.Evaluate(t.AddSeconds(4));
+            Require(registry.GetInfo("a").State == DeviceLinkState.Warning, "3s without response becomes warning");
+            registry.Evaluate(t.AddSeconds(11));
+            Require(registry.GetInfo("a").State == DeviceLinkState.Lost, "10s without response becomes lost");
+            Require(registry.GetInfo("a").ErrorCount == 1, "lost counts as one error");
+            registry.Heartbeat("a", 90, t.AddSeconds(12));
+            registry.Evaluate(t.AddSeconds(12.1));
+            Require(registry.GetInfo("a").State == DeviceLinkState.Lost, "recovery is held back for the promote time");
+            registry.Heartbeat("a", 90, t.AddSeconds(12.6));
+            registry.Evaluate(t.AddSeconds(12.7));
+            Require(registry.GetInfo("a").State == DeviceLinkState.Connected, "stable responses promote to connected");
+            Require(registry.GetHistory("a").Count == 4, "history keeps Connected, Warning, Lost, Connected (" + registry.GetHistory("a").Count + ")");
+            for (int i = 0; i < 200; i++)
             {
-                SquareButton button = NewButton(UiTheme.Dark, SquareButtonVariant.Default, null, 32);
-                host.Controls.Add(button);
-                host.Show();
-                Application.DoEvents();
-                int clicks = 0;
-                button.Click += delegate { clicks++; };
-                button.PerformClick();
-                Require(clicks == 1, "PerformClick raises Click once");
-                button.Enabled = false;
-                button.PerformClick();
-                Require(clicks == 1, "disabled button does not click");
-                Require(button.VisualState == SquareButtonState.Disabled, "disabled visual state");
-                button.Enabled = true;
-                Require(button.VisualState == SquareButtonState.Normal, "enabled returns to normal");
-                button.ForcedState = SquareButtonState.Hover;
-                Require(button.VisualState == SquareButtonState.Hover, "forced state wins");
-                button.ForcedState = null;
+                registry.Report("b", i % 2 == 0 ? DeviceLinkState.Fault : DeviceLinkState.Connected, null, null, t.AddSeconds(100 + i));
+                registry.Evaluate(t.AddSeconds(100 + i));
             }
+            Require(registry.GetHistory("b").Count <= DeviceStatusRegistry.HistoryCapacity, "history is capped");
         }
 
-        private static void CheckDialogResultAndToggle()
+        private static void CheckThreadSafety()
         {
-            using (var form = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-20000, 0) })
+            using (var host = new Panel())
             {
-                SquareButton ok = NewButton(UiTheme.Dark, SquareButtonVariant.Primary, null, 32);
-                ok.DialogResult = DialogResult.OK;
-                form.Controls.Add(ok);
-                form.AcceptButton = ok;
-                form.Show();
-                Application.DoEvents();
-                Require(form.AcceptButton == ok, "AcceptButton accepts IButtonControl");
-                ok.PerformClick();
-                Require(form.DialogResult == DialogResult.OK, "DialogResult is propagated to the form");
-            }
-            using (var form = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-20000, 0) })
-            {
-                SquareButton toggle = NewButton(UiTheme.Light, SquareButtonVariant.Default, null, 32);
-                toggle.IsToggle = true;
-                form.Controls.Add(toggle);
-                form.Show();
-                Application.DoEvents();
-                int changes = 0;
-                toggle.CheckedChanged += delegate { changes++; };
-                toggle.PerformClick();
-                Require(toggle.Checked && changes == 1, "toggle turns on");
-                Require(toggle.VisualState == SquareButtonState.Pressed, "checked toggle looks pressed");
-                toggle.PerformClick();
-                Require(!toggle.Checked && changes == 2, "toggle turns off");
+                var strip = new DeviceStatusStrip();
+                host.Controls.Add(strip);
+                foreach (string id in DemoSection.DeviceIds) { strip.AddDevice(id, id); }
+                var failures = new System.Collections.Concurrent.ConcurrentQueue<Exception>();
+                Task[] writers = Enumerable.Range(0, 4).Select(n => Task.Run(() =>
+                {
+                    var random = new Random(n);
+                    try
+                    {
+                        for (int i = 0; i < 5000; i++)
+                        {
+                            string id = DemoSection.DeviceIds[random.Next(DemoSection.DeviceIds.Length)];
+                            if (i % 3 == 0) { strip.Registry.Heartbeat(id, random.Next(500)); }
+                            else { strip.Registry.Report(id, (DeviceLinkState)random.Next(6), "t", random.Next(500)); }
+                        }
+                    }
+                    catch (Exception error) { failures.Enqueue(error); }
+                })).ToArray();
+                while (!Task.WaitAll(writers, 5)) { strip.RefreshStatus(); }
+                strip.RefreshStatus();
+                Exception first;
+                Require(!failures.TryDequeue(out first), "concurrent Report/Heartbeat: " + first);
+                strip.Dispose();
             }
         }
 
@@ -200,43 +229,58 @@ namespace OmniSight.UI.Demo
                 surface.BeginLoad(typeof(Form));
                 var host = (IDesignerHost)surface.GetService(typeof(IDesignerHost));
                 var form = (Form)host.RootComponent;
-                form.ClientSize = new Size(400, 120);
-                var button = (SquareButton)host.CreateComponent(typeof(SquareButton));
-                form.Controls.Add(button);
-                button.Location = new Point(10, 10);
-                button.Text = "버튼";
-                ((Control)surface.View).CreateControl();
+                form.ClientSize = new Size(900, 120);
+                var strip = (DeviceStatusStrip)host.CreateComponent(typeof(DeviceStatusStrip));
+                form.Controls.Add(strip);
+                strip.Location = new Point(10, 10);
+                var view = (Control)surface.View;
+                view.CreateControl();
                 form.CreateControl();
-                button.CreateControl();
+                strip.CreateControl();
                 Application.DoEvents();
-                Require(button.Site != null && button.Site.DesignMode, "button is sited in design mode");
-                using (var bitmap = new Bitmap(button.Width, button.Height))
+                Require(strip.Site != null && strip.Site.DesignMode, "strip is sited in design mode");
+                Require(strip.Controls.Count == 6, "design mode shows 6 sample chips (" + strip.Controls.Count + ")");
+                Require(strip.Width > 200 && strip.Height == strip.ChipHeight, "design-mode strip sizes itself to the samples");
+                using (var bitmap = new Bitmap(strip.Width, strip.Height))
                 {
-                    button.DrawToBitmap(bitmap, new Rectangle(Point.Empty, button.Size));
-                    var palette = new SquareButtonPalette(UiTheme.Dark);
-                    Require(Same(bitmap.GetPixel(button.Width / 2, 3), palette.Get(SquareButtonVariant.Default, SquareButtonState.Normal).Back),
-                        "design-mode render uses the theme color");
+                    strip.DrawToBitmap(bitmap, new Rectangle(Point.Empty, strip.Size));
+                    int distinct = 0;
+                    Color first = bitmap.GetPixel(strip.Width / 2, strip.Height / 2);
+                    for (int x = 0; x < bitmap.Width; x += 3)
+                    {
+                        if (!Same(bitmap.GetPixel(x, bitmap.Height / 2), first)) { distinct++; }
+                    }
+                    Require(distinct > 10, "design-mode render is not blank");
                 }
             }
         }
 
         private static void CheckLeaks()
         {
-            using (var host = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-20000, 0), Width = 400, Height = 200 })
+            using (var host = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-20000, 0), Width = 1200, Height = 200 })
             {
-                SquareButton button = NewButton(UiTheme.Dark, SquareButtonVariant.Default, null, 32);
-                host.Controls.Add(button);
+                var strip = new DeviceStatusStrip { Location = new Point(10, 10) };
+                host.Controls.Add(strip);
+                foreach (string id in DemoSection.DeviceIds) { strip.AddDevice(id, id); }
                 host.Show();
                 Application.DoEvents();
-                var random = new Random(3);
+                var random = new Random(7);
                 Action iterate = () =>
                 {
-                    for (int i = 0; i < 1000; i++)
+                    for (int i = 0; i < 500; i++)
                     {
-                        button.Theme = (UiTheme)random.Next(2);
-                        button.Variant = (SquareButtonVariant)random.Next(3);
-                        button.ForcedState = (SquareButtonState)random.Next(5);
-                        button.Update();
+                        string id = DemoSection.DeviceIds[random.Next(DemoSection.DeviceIds.Length)];
+                        strip.Registry.Report(id, (DeviceLinkState)random.Next(6), null, random.Next(500));
+                        if (i % 5 == 0) { strip.Theme = strip.Theme == DeviceStatusTheme.Dark ? DeviceStatusTheme.Light : DeviceStatusTheme.Dark; }
+                        strip.RefreshStatus();
+                        host.Update();
+                        if (i % 50 == 0)
+                        {
+                            strip.ShowDetail(DemoSection.DeviceIds[random.Next(DemoSection.DeviceIds.Length)]);
+                            Application.DoEvents();
+                            strip.CloseDetail();
+                            Application.DoEvents();
+                        }
                     }
                 };
                 for (int warm = 0; warm < 3; warm++) { iterate(); }
@@ -246,7 +290,7 @@ namespace OmniSight.UI.Demo
                     int gdiBefore = GetGuiResources(process.Handle, 0);
                     int userBefore = GetGuiResources(process.Handle, 1);
                     long memoryBefore = GC.GetTotalMemory(true);
-                    for (int round = 0; round < 10; round++) { iterate(); }
+                    for (int round = 0; round < 40; round++) { iterate(); }
                     GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
                     int gdiAfter = GetGuiResources(process.Handle, 0);
                     int userAfter = GetGuiResources(process.Handle, 1);
@@ -254,18 +298,12 @@ namespace OmniSight.UI.Demo
                     Require(gdiAfter <= gdiBefore + 8, $"GDI handles {gdiBefore} -> {gdiAfter}");
                     Require(userAfter <= userBefore + 8, $"USER handles {userBefore} -> {userAfter}");
                     Require(memoryAfter - memoryBefore < 8L * 1024 * 1024, $"managed memory {memoryBefore} -> {memoryAfter}");
-                    Console.WriteLine($"leak check: GDI {gdiBefore}->{gdiAfter}, USER {userBefore}->{userAfter}, memory {memoryBefore / 1024}KB->{memoryAfter / 1024}KB after 10,000 state changes");
+                    Console.WriteLine($"leak check: GDI {gdiBefore}->{gdiAfter}, USER {userBefore}->{userAfter}, memory {memoryBefore / 1024}KB->{memoryAfter / 1024}KB after 20,000 updates and 400 popups");
                 }
             }
         }
 
-        private static Point[] Corners(Size size)
-        {
-            return new[] { new Point(0, 0), new Point(size.Width - 1, 0), new Point(0, size.Height - 1), new Point(size.Width - 1, size.Height - 1) };
-        }
-
         private static bool Same(Color a, Color b) => a.R == b.R && a.G == b.G && a.B == b.B;
-        private static bool Same(Color a, int rgb) => a.R == ((rgb >> 16) & 0xff) && a.G == ((rgb >> 8) & 0xff) && a.B == (rgb & 0xff);
 
         private static void Require(bool condition, string message)
         {
