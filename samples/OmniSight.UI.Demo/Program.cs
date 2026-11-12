@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using OmniSight.UI.Controls;
+using OmniSight.UI.Demo.ViewerChecks;
 
 namespace OmniSight.UI.Demo
 {
@@ -17,6 +18,12 @@ namespace OmniSight.UI.Demo
                 {
                     DemoChecks.RunChecks();
                     ButtonChecks.RunChecks();
+                    ViewerChecksRunner.RunAll();
+                    return 0;
+                }
+                if (args.Length > 0 && args[0] == "--viewer")
+                {
+                    ViewerChecksRunner.RunSpecial(args);
                     return 0;
                 }
                 if (args.Length > 1 && args[0] == "--capture")
@@ -58,8 +65,11 @@ namespace OmniSight.UI.Demo
             var buttonsLight = new ButtonShowcase(UiTheme.Light, false) { Dock = DockStyle.Top };
             var next = new SquareButton { Text = "상태 순환", Left = 24, Top = 14, Width = 140, Height = 36, Variant = SquareButtonVariant.Primary };
             next.Click += delegate { StepStates(); };
+            var viewerDemo = new SquareButton { Text = "이미지 뷰어 데모", Left = 180, Top = 14, Width = 160, Height = 36 };
+            viewerDemo.Click += delegate { new ViewerDemoForm().Show(this); };
             var tools = new Panel { Dock = DockStyle.Top, Height = 64 };
             tools.Controls.Add(next);
+            tools.Controls.Add(viewerDemo);
 
             // Dock=Top은 나중에 추가한 것이 위로 오므로 아래쪽부터 추가한다.
             Controls.Add(buttonsLight);

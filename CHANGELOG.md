@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+- `ImageViewer` 추가(별도 저장소 VisionImageViewer v0.1.0의 코어를 이식, 네임스페이스 `OmniSight.UI.Controls.Vision`): 외부 의존 없는 GDI 이미지 뷰어. 원시 버퍼 입력, 스레드 안전, 최신 프레임 우선, 확대·스크롤·검사 모드, 오버레이, 픽셀 값 이벤트, 파일 열기·저장
+- 문서 `docs/ImageViewer/`(사용법·구조·성능·타 라이브러리 연동). OpenCvSharp 어댑터는 이식하지 않음
+- 데모: "이미지 뷰어 데모" 창, `--check`에 뷰어 검증 58항목 추가, `--viewer bench|soak|stress`
+- `OmniSight.UI`에 `AllowUnsafeBlocks` 켬, 데모에 `InternalsVisibleTo`
+
 ## 0.5.0
 - 호환성 변경: 타깃을 `net472` 단일로 변경(`net9.0-windows` 제거), Debug/Release x64 전용. 출력 경로는 `bin/x64/<구성>/net472`
 - 호환성 변경: 샘플 컨트롤 `ThemedButton` 삭제(`SquareButton`을 사용)
