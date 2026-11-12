@@ -101,8 +101,8 @@ button.Font = new Font("Segoe UI", 11F);
 
 ```
 dotnet build OmniSight.UI.sln -c Release
-samples/OmniSight.UI.Demo/bin/Release/net9.0-windows/OmniSight.UI.Demo.exe --check
-samples/OmniSight.UI.Demo/bin/Release/net9.0-windows/OmniSight.UI.Demo.exe --capture docs/images
+samples/OmniSight.UI.Demo/bin/Release/net472/OmniSight.UI.Demo.exe --check
+samples/OmniSight.UI.Demo/bin/Release/net472/OmniSight.UI.Demo.exe --capture docs/images
 ```
 
 - `--check`: VS 테마 값 대조, 3변형 × 5상태 × 2테마 × 2크기의 모서리·안쪽 픽셀(부모 색이 마젠타여도 비치지 않음), 같은 값을 반복 설정해도 다시 그리지 않음, 입력·`DialogResult`·토글, 디자인 모드 렌더, 10,000회 상태 변경 후 GDI·USER 핸들과 메모리 증가 없음.

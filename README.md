@@ -3,7 +3,7 @@
 OmniSight 계열 프로젝트가 공용으로 사용하는 WinForms 커스텀 UI 컨트롤 라이브러리 (출력: `OmniSight.UI.dll`).
 
 ## 구조
-- `src/OmniSight.UI` : 라이브러리 (net9.0-windows, net472 멀티타깃)
+- `src/OmniSight.UI` : 라이브러리 (net472 전용)
 - `samples/OmniSight.UI.Demo` : 컨트롤 확인용 데모 앱
 
 ## 컨트롤
@@ -25,7 +25,7 @@ DLL 위치: `src/OmniSight.UI/bin/Release/<TFM>/OmniSight.UI.dll`
 ```xml
 <ItemGroup>
   <Reference Include="OmniSight.UI">
-    <HintPath>경로\OmniSight.UI\0.1.0\net9.0-windows\OmniSight.UI.dll</HintPath>
+    <HintPath>경로\OmniSight.UI\0.1.0\net472\OmniSight.UI.dll</HintPath>
   </Reference>
 </ItemGroup>
 ```
