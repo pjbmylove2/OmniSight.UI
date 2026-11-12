@@ -154,8 +154,8 @@ strip.Font = new Font("Segoe UI", 11F);
 
 ```
 dotnet build OmniSight.UI.sln -c Release
-samples/OmniSight.UI.Demo/bin/Release/net9.0-windows/OmniSight.UI.Demo.exe --check
-samples/OmniSight.UI.Demo/bin/Release/net9.0-windows/OmniSight.UI.Demo.exe --capture docs/images
+samples/OmniSight.UI.Demo/bin/x64/Release/net472/OmniSight.UI.Demo.exe --check
+samples/OmniSight.UI.Demo/bin/x64/Release/net472/OmniSight.UI.Demo.exe --capture docs/images
 ```
 
 - `--check`: 6개 상태 × 2개 테마 × 2개 크기의 칩 모서리·램프 중심 픽셀, 같은 값 반복 시 다시 그리지 않음, 자동 강등·승격, 다중 스레드 보고, 디자인 모드 렌더, 수만 번 갱신 후 GDI·USER 핸들과 메모리 증가 없음을 확인한다.

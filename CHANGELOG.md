@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+- 호환성 변경: 타깃을 `net472` 단일로 변경(`net9.0-windows` 제거), Debug/Release x64 전용. 출력 경로는 `bin/x64/<구성>/net472`
+- 호환성 변경: 샘플 컨트롤 `ThemedButton` 삭제(`SquareButton`을 사용)
+- 데모를 `net472`로 변경, `System.Design` 참조 추가
+
 ## 0.4.1
 - 수정: `SquareButton`을 디자이너에 올리면 `Font`(Malgun Gothic 9), `BackColor`, `Cursor`, `AccessibleRole`이 소비 프로젝트의 Designer.cs에 항상 박히던 문제. 생성자의 지정과 `BackColor` 재정의를 없애 손대지 않은 버튼은 위치·크기·텍스트만 기록되고, 글꼴은 부모를 따라간다
 - 접근성: `AccessibleRole`을 건드리지 않고 `CreateAccessibilityInstance`로 푸시 버튼 역할을 유지
