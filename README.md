@@ -8,7 +8,11 @@ OmniSight 계열 프로젝트가 공용으로 사용하는 WinForms 커스텀 UI
 
 ## 컨트롤
 - `ThemedButton` : Theme 색을 쓰는 플랫 버튼(파이프라인 검증용 샘플)
+- `SquareButton` : VS2022 다크·라이트 테마 색을 쓰는 각진 버튼(기본·기본 동작·위험, 토글, `DialogResult`). 사용법·색 표·크기 조절·결과 화면은 [docs/SquareButton.md](docs/SquareButton.md)
 - `DeviceStatusStrip` : 장치 연결 상태를 램프 + 이름 칩으로 보여 주는 헤더용 표시줄. 6단계 상태, 다크·라이트 테마, 상세 팝업. 사용법·크기 조절·결과 화면은 [docs/DeviceStatusStrip.md](docs/DeviceStatusStrip.md)
+
+## 테마 색
+모든 사용자 정의 컨트롤의 다크·라이트 색은 Visual Studio 2022 테마 색을 따른다. 현재 `SquareButton`은 VS2022 값을 쓰고, `DeviceStatusStrip`은 아직 자체 팔레트를 쓴다(후속으로 맞춘다).
 
 ## 빌드
 ```
