@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+- `CardPanel` 추가. 둥근 테두리, 3칸 헤더, 자식 컨트롤 배치와 공용 `UiTheme` 지원
+- `ColorLabel` 추가. 상태 배지, 사용자 지정 배경의 자동 대비, `DataGridView`용 `DrawBadge` 지원
+- 기존 데모에 검사 화면과 배지 갤러리 추가. `--check`와 `--capture`에 카드·라벨 검증과 캡처 추가
+- 설치와 사용 예제는 `docs/CardPanel.md`, `docs/ColorLabel.md`에 정리
+
 ## 0.7.0
 - `SquareButton.Image`가 버튼 높이의 절반 칸에 비율을 유지하며 맞춰지도록 변경(전에는 원본 크기 그대로 그림). 호환성 변경: 큰 이미지는 줄어들고 작은 이미지는 늘어난다
 - `SquareButton.ImageSize` 추가(0이면 자동, 아니면 칸 크기 px)
