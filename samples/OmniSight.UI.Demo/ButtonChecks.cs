@@ -21,12 +21,13 @@ namespace OmniSight.UI.Demo
             CheckDesignerDefaults();
             CheckPalette();
             CheckEdgePixels();
+            CheckImageScaling();
             CheckNoRedundantInvalidate();
             CheckInput();
             CheckDialogResultAndToggle();
             CheckDesignMode();
             CheckLeaks();
-            Console.WriteLine("PASS: designer defaults, palette, edge pixels (3 variants x 5 states x 2 themes x 2 sizes), redundant invalidate, input, dialog result and toggle, design mode, leaks");
+            Console.WriteLine("PASS: designer defaults, palette, edge pixels (3 variants x 5 states x 2 themes x 2 sizes), image scaling, redundant invalidate, input, dialog result and toggle, design mode, leaks");
         }
 
         // 디자이너는 ShouldSerializeValue가 true인 속성만 Designer.cs에 쓴다. 생성자가 기본값과 다른 값을
@@ -36,7 +37,7 @@ namespace OmniSight.UI.Demo
             using (var button = new SquareButton())
             {
                 var properties = System.ComponentModel.TypeDescriptor.GetProperties(button);
-                foreach (string name in new[] { "Font", "BackColor", "ForeColor", "Cursor", "AccessibleRole", "TabStop", "Variant", "Theme", "IsToggle", "Checked", "Image", "TextAlign", "DialogResult" })
+                foreach (string name in new[] { "Font", "BackColor", "ForeColor", "Cursor", "AccessibleRole", "TabStop", "Variant", "Theme", "IsToggle", "Checked", "Image", "ImageSize", "TextAlign", "DialogResult" })
                 {
                     System.ComponentModel.PropertyDescriptor property = properties[name];
                     Require(property != null, "property exists: " + name);
@@ -136,6 +137,104 @@ namespace OmniSight.UI.Demo
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // 이미지는 버튼 높이에서 위아래 8px씩 뺀 칸에 비율을 유지하며 들어가고, 왼쪽에 놓이며, 세로 가운데에 온다.
+        private static void CheckImageScaling()
+        {
+            foreach (int height in new[] { 32, 40, 48 })
+            {
+                using (var image = new Bitmap(64, 32))
+                using (SquareButton button = NewButton(UiTheme.Dark, SquareButtonVariant.Default, SquareButtonState.Normal, height))
+                using (var parent = new Panel { BackColor = Color.Magenta, Size = new Size(200, height + 20) })
+                {
+                    using (Graphics g = Graphics.FromImage(image)) { g.Clear(Color.Red); }
+                    button.Image = image;
+                    button.Text = "ABC";
+                    button.Location = new Point(10, 10);
+                    parent.Controls.Add(button);
+                    using (var bitmap = new Bitmap(button.Width, button.Height))
+                    {
+                        button.DrawToBitmap(bitmap, new Rectangle(Point.Empty, button.Size));
+                        int minX = int.MaxValue, maxX = -1, minY = int.MaxValue, maxY = -1;
+                        for (int y = 0; y < bitmap.Height; y++)
+                        {
+                            for (int x = 0; x < bitmap.Width; x++)
+                            {
+                                Color c = bitmap.GetPixel(x, y);
+                                if (c.R > 200 && c.G < 60 && c.B < 60)
+                                {
+                                    minX = Math.Min(minX, x); maxX = Math.Max(maxX, x);
+                                    minY = Math.Min(minY, y); maxY = Math.Max(maxY, y);
+                                }
+                            }
+                        }
+                        Require(maxX >= 0, "image is drawn at height " + height);
+                        int box = height / 2;                 // 자동 크기: 버튼 높이의 절반
+                        int expectedWidth = box;                 // 64x32(2:1)이므로 폭이 칸을 채우고 높이는 절반
+                        int expectedHeight = box / 2;
+                        int width = maxX - minX + 1;
+                        int drawnHeight = maxY - minY + 1;
+                        Require(Math.Abs(width - expectedWidth) <= 1, $"image width {width} expected {expectedWidth} at height {height}");
+                        Require(Math.Abs(drawnHeight - expectedHeight) <= 1, $"image height {drawnHeight} expected {expectedHeight} at height {height}");
+                        Require(minX >= 11 && minX <= 13, $"image starts at the left padding ({minX}) at height {height}");
+                        Require(Math.Abs((minY + maxY) / 2 - (height - 1) / 2) <= 1, $"image is vertically centered at height {height}");
+                    }
+                }
+            }
+
+            // 직접 지정한 ImageSize는 높이와 상관없이 그 칸에 맞는다.
+            using (var image = new Bitmap(28, 26))
+            using (SquareButton button = NewButton(UiTheme.Dark, SquareButtonVariant.Default, SquareButtonState.Normal, 52))
+            using (var parent = new Panel { BackColor = Color.Magenta, Size = new Size(200, 72) })
+            {
+                using (Graphics g = Graphics.FromImage(image)) { g.Clear(Color.Red); }
+                button.Image = image;
+                button.ImageSize = 14;
+                button.Text = "ABC";
+                button.Location = new Point(10, 10);
+                parent.Controls.Add(button);
+                using (var bitmap = new Bitmap(button.Width, button.Height))
+                {
+                    button.DrawToBitmap(bitmap, new Rectangle(Point.Empty, button.Size));
+                    int minX = int.MaxValue, maxX = -1;
+                    for (int y = 0; y < bitmap.Height; y++)
+                    {
+                        for (int x = 0; x < bitmap.Width; x++)
+                        {
+                            Color c = bitmap.GetPixel(x, y);
+                            if (c.R > 200 && c.G < 60 && c.B < 60) { minX = Math.Min(minX, x); maxX = Math.Max(maxX, x); }
+                        }
+                    }
+                    int drawn = maxX - minX + 1;
+                    Require(drawn >= 13 && drawn <= 14, "ImageSize 14 keeps aspect 28x26 within 14 (width " + drawn + ")");
+                }
+            }
+
+            // 이미지가 없으면 글자는 버튼 가운데에 온다.
+            using (SquareButton button = NewButton(UiTheme.Dark, SquareButtonVariant.Default, SquareButtonState.Normal, 32))
+            using (var parent = new Panel { BackColor = Color.Magenta, Size = new Size(200, 52) })
+            {
+                button.Text = "ABC";
+                button.Width = 120;
+                button.Location = new Point(10, 10);
+                parent.Controls.Add(button);
+                using (var bitmap = new Bitmap(button.Width, button.Height))
+                {
+                    button.DrawToBitmap(bitmap, new Rectangle(Point.Empty, button.Size));
+                    Color back = new SquareButtonPalette(UiTheme.Dark).Get(SquareButtonVariant.Default, SquareButtonState.Normal).Back;
+                    int minX = int.MaxValue, maxX = -1;
+                    for (int y = 2; y < bitmap.Height - 2; y++)
+                    {
+                        for (int x = 2; x < bitmap.Width - 2; x++)
+                        {
+                            if (!Same(bitmap.GetPixel(x, y), back)) { minX = Math.Min(minX, x); maxX = Math.Max(maxX, x); }
+                        }
+                    }
+                    Require(maxX >= 0, "text without image is drawn");
+                    Require(Math.Abs((minX + maxX) / 2 - (button.Width - 1) / 2) <= 2, $"text is horizontally centered without image ({minX}..{maxX} in {button.Width})");
                 }
             }
         }

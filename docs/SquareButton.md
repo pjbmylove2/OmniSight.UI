@@ -44,7 +44,7 @@ VS2022 설치본의 테마 정의(`Common7\IDE\CommonExtensions\Platform\Theme.D
 
 ### 디자이너에서
 
-솔루션을 빌드한 뒤 툴박스에서 `SquareButton`을 끌어 놓는다. 속성 창의 `OmniSight` 범주에서 `Theme`(Dark/Light), `Variant`(Default/Primary/Danger), `IsToggle`, `Image`, `TextAlign`을 바꾼다.
+솔루션을 빌드한 뒤 툴박스에서 `SquareButton`을 끌어 놓는다. 속성 창의 `OmniSight` 범주에서 `Theme`(Dark/Light), `Variant`(Default/Primary/Danger), `IsToggle`, `Image`, `ImageSize`, `TextAlign`을 바꾼다.
 .NET Framework 프로젝트는 `net472` 폴더의 DLL을 참조한다. 디자이너는 빌드된 DLL을 읽으므로 먼저 빌드해야 한다.
 
 ### 코드에서
@@ -63,6 +63,19 @@ form.AcceptButton = ok;
 var live = new SquareButton { Text = "라이브", IsToggle = true };
 live.CheckedChanged += (s, e) => SetLive(live.Checked);
 ```
+
+### 이미지 넣기
+
+```csharp
+var run = new SquareButton { Text = "검사 운전", Image = Properties.Resources.inspection_active };
+var tab = new SquareButton { Text = "검사 설정", Image = icon, ImageSize = 14 };   // 칸 크기를 직접 지정
+```
+
+- 이미지는 **글자 왼쪽**에 놓이고 세로 가운데에 맞춘다. 글자는 남는 영역의 가운데에 온다.
+- 칸 크기는 기본이 **버튼 높이의 절반**(최소 8px)이다. 높이 32면 16px, 52면 26px. `ImageSize`를 0보다 크게 주면 그 값(px)을 쓴다.
+- 칸 안에서 **가로세로 비율을 유지**하므로 28x26, 26x23, 9x16처럼 모양이 달라도 찌그러지지 않는다. 원본이 칸보다 작으면 늘리고 크면 줄이며 `HighQualityBicubic`으로 그린다. 가능하면 칸 크기에 가까운 원본을 쓰면 가장 선명하다.
+- **이미지가 없으면** 글자가 버튼 가운데에 온다(`TextAlign` 기본값 `MiddleCenter`).
+- 이미지 색은 테마를 따라가지 않는다. 다크·라이트 또는 선택·비선택용 이미지가 따로 있으면 상태가 바뀔 때 `Image`를 바꿔 끼운다.
 
 ### 테마 바꾸기
 
