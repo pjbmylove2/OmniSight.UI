@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+- 수정: `SquareButton`을 디자이너에 올리면 `Font`(Malgun Gothic 9), `BackColor`, `Cursor`, `AccessibleRole`이 소비 프로젝트의 Designer.cs에 항상 박히던 문제. 생성자의 지정과 `BackColor` 재정의를 없애 손대지 않은 버튼은 위치·크기·텍스트만 기록되고, 글꼴은 부모를 따라간다
+- 접근성: `AccessibleRole`을 건드리지 않고 `CreateAccessibilityInstance`로 푸시 버튼 역할을 유지
+- 데모 `--check`에 디자이너 기본값 검사 추가
+
 ## 0.4.0
 - `DeviceStatusStrip`의 색을 VS2022 다크·라이트 테마 값으로 교체(Theme.Dark/Light.pkgdef에서 읽은 값)
 - 호환성 변경: `DeviceStatusTheme`을 없애고 `UiTheme`(`SquareButton`과 공용)을 쓴다. `DeviceStatusPalette`의 `AccentBack`은 `Hover`·`Selected`로 나뉘고 `PopupList`·`PopupBorder` 등이 추가됨

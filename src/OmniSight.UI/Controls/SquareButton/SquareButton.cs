@@ -43,14 +43,31 @@ namespace OmniSight.UI.Controls
                 ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.Selectable |
                 ControlStyles.StandardClick | ControlStyles.StandardDoubleClick, true);
             SetStyle(ControlStyles.SupportsTransparentBackColor, false);
-            TabStop = true;
-            Cursor = Cursors.Default;
-            AccessibleRole = AccessibleRole.PushButton;
-            Font = SystemFonts.MessageBoxFont;
-            Size = DefaultSize;
+            // Font·Cursor·AccessibleRole·BackColor는 여기서 지정하지 않는다. 지정하면 디자이너가
+            // 사용자가 정한 값으로 보고 소비 프로젝트의 Designer.cs에 그대로 박아 넣는다.
         }
 
         protected override Size DefaultSize => new Size(100, 32);
+
+        // AccessibleRole 속성을 건드리지 않고도 보조 기술에 버튼으로 보이게 한다.
+        protected override AccessibleObject CreateAccessibilityInstance()
+        {
+            return new SquareButtonAccessibleObject(this);
+        }
+
+        private sealed class SquareButtonAccessibleObject : ControlAccessibleObject
+        {
+            public SquareButtonAccessibleObject(SquareButton owner) : base(owner) { }
+
+            public override AccessibleRole Role
+            {
+                get
+                {
+                    AccessibleRole role = Owner.AccessibleRole;
+                    return role != AccessibleRole.Default ? role : AccessibleRole.PushButton;
+                }
+            }
+        }
 
         /// <summary>색 변형: 일반, 기본 동작, 위험.</summary>
         [Category("OmniSight")]
@@ -155,13 +172,6 @@ namespace OmniSight.UI.Controls
         {
             get { return base.Text; }
             set { base.Text = value; }
-        }
-
-        [DefaultValue(typeof(Color), "")]
-        public override Color BackColor
-        {
-            get { return base.BackColor; }
-            set { base.BackColor = value; }
         }
 
         /// <summary>현재 화면에 쓰이는 시각 상태.</summary>
