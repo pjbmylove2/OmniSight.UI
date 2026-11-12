@@ -9,7 +9,7 @@
 | `DeviceStatusChip` | 램프 + 이름 칩(표시줄이 만든다). |
 | `DeviceStatusRegistry` | 장치 쪽이 상태를 보고하는 창구. 어느 스레드에서든 호출할 수 있다. |
 | `DeviceStatusPopup` | 상세 팝업(연결 상태, 마지막 응답, 응답 시간, 오류 누적, 최근 변경 이력, 재연결). |
-| `DeviceStatusPalette` / `DeviceStatusTheme` | 다크·라이트 색. |
+| `DeviceStatusPalette` / `UiTheme` | VS2022 다크·라이트 색. `UiTheme`은 `SquareButton`과 공용이다. |
 
 ## 결과 화면
 
@@ -24,6 +24,25 @@
 칩을 누르면 열리는 상세 팝업(왼쪽 다크, 오른쪽 라이트).
 
 ![다크 팝업](images/DeviceStatusPopup-dark.png) ![라이트 팝업](images/DeviceStatusPopup-light.png)
+
+## 색
+
+색은 **Visual Studio 2022의 다크·라이트 테마**와 같다. 설치된 VS의 테마 정의(`Theme.Dark.pkgdef`, `Theme.Light.pkgdef`)에서 읽은 값이고, 표의 이름은 그 파일의 토큰이다.
+
+| 용도 | 다크 | 라이트 | VS 토큰 |
+|---|---|---|---|
+| 헤더 바탕 | `#1f1f1f` | `#f5f5f5` | Environment.ToolWindowBackground |
+| 칩 바탕 / 테두리 | `#3d3d3d` / `#3d3d3d` | `#ececf0` / `#acacac` | CommonControls.Button / ButtonBorder |
+| 마우스 올림 바탕 / 테두리 | `#4d4d4d` / `#4d4d4d` | `#c9def5` / `#006cbe` | ButtonHover / ButtonBorderHover |
+| 팝업이 열린 칩 바탕 / 테두리 | `#333333` / `#999999` | `#c9def5` / `#2d2d2d` | ButtonFocused / ButtonBorderFocused |
+| 글자 / 보조 글자 | `#fafafa` / `#b2b2b2` | `#1e1e1e` / `#717171` | Button 글자 / ToolWindowTabText·ToolTipHintText |
+| 정상 램프 | `#6ccb5f` | `#2e7d32` | CommonDocument.StatusBannerSuccessBorder |
+| 경고 램프 | `#fce100` | `#9d5d00` | StatusBannerWarningBorder |
+| 오류·끊김 램프 | `#ff99a4` | `#d53230` | StatusBannerErrorBorder |
+| 연결 중 호 / 바탕 고리 | `#83beeb` / `#424242` | `#006cbe` / `#d6d8dc` | ThemedDialog.Hyperlink / ToolWindowSplitBarBackground |
+| 팝업 바탕 / 목록 / 테두리 | `#242424` / `#2e2e2e` / `#3d3d3d` | `#fbfbfb` / `#eeeef2` / `#cccedb` | ThemedDialog.WindowPanel / ToolWindowContentGrid / ToolWindowBorder |
+
+팝업의 `재연결` 버튼은 `SquareButton`이라 같은 테마 값을 쓴다. VS 테마에 장치 상태용 토큰은 없으므로 램프 색은 VS의 상태 배너(성공·경고·오류) 테두리 색을 가져다 썼다.
 
 ## 상태 6단계
 
@@ -53,7 +72,7 @@ Visual Studio에서 솔루션을 빌드한 뒤 툴박스에서 `DeviceStatusStri
 ### 2. 장치 등록
 
 ```csharp
-strip.Theme = DeviceStatusTheme.Dark;      // 또는 Light
+strip.Theme = UiTheme.Dark;      // 또는 Light
 strip.AddDevice("cam1", "CAM 1");
 strip.AddDevice("cam2", "CAM 2");
 strip.AddDevice("io",   "I/O 보드");
@@ -93,7 +112,7 @@ strip.ShowDetail("cam2");                                       // 코드에서 
 ### 5. 테마 바꾸기
 
 ```csharp
-strip.Theme = DeviceStatusTheme.Light;   // 칩과 열려 있는 팝업이 즉시 다시 칠해진다
+strip.Theme = UiTheme.Light;   // 칩과 열려 있는 팝업이 즉시 다시 칠해진다
 
 strip.Palette.Ok = Color.SeaGreen;       // 색을 직접 바꾸려면
 strip.RefreshPalette();

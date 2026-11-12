@@ -21,7 +21,7 @@ namespace OmniSight.UI.Controls
         private Label lblErrors;
         private Label lblHistoryTitle;
         private ListBox lstHistory;
-        private PopupButton btnReconnect;
+        private SquareButton btnReconnect;
 
         private void InitializeComponent()
         {
@@ -40,7 +40,7 @@ namespace OmniSight.UI.Controls
             this.lblErrors = new Label();
             this.lblHistoryTitle = new Label();
             this.lstHistory = new ListBox();
-            this.btnReconnect = new PopupButton();
+            this.btnReconnect = new SquareButton();
             this.SuspendLayout();
             this.lamp.Name = "lamp";
             this.lamp.Location = new Point(16, 17);

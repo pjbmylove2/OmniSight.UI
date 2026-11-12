@@ -17,7 +17,7 @@ namespace OmniSight.UI.Controls
         private long _historyKey = -1;
         private SolidBrush _itemBack = new SolidBrush(Color.Black);
 
-        public DeviceStatusPopup() : this(new DeviceStatusPalette(DeviceStatusTheme.Dark), string.Empty, string.Empty)
+        public DeviceStatusPopup() : this(new DeviceStatusPalette(UiTheme.Dark), string.Empty, string.Empty)
         {
         }
 
@@ -42,7 +42,7 @@ namespace OmniSight.UI.Controls
             ForeColor = palette.Text;
             lblTitle.BackColor = palette.Popup; lblTitle.ForeColor = palette.Text;
             lblState.BackColor = palette.Popup; lblState.ForeColor = palette.Muted;
-            line.BackColor = palette.Edge;
+            line.BackColor = palette.PopupBorder;
             foreach (Label key in new[] { lblLinkKey, lblLastKey, lblLatencyKey, lblErrorsKey, lblHistoryTitle })
             {
                 key.BackColor = palette.Popup; key.ForeColor = palette.Muted;
@@ -51,9 +51,9 @@ namespace OmniSight.UI.Controls
             {
                 value.BackColor = palette.Popup; value.ForeColor = palette.Text;
             }
-            lstHistory.BackColor = palette.Surface;
+            lstHistory.BackColor = palette.PopupList;
             lstHistory.ForeColor = palette.Text;
-            btnReconnect.Apply(palette);
+            btnReconnect.Theme = palette.Theme;
             Invalidate(true);
         }
 
@@ -110,14 +110,14 @@ namespace OmniSight.UI.Controls
 
         private void HistoryDrawItem(object sender, DrawItemEventArgs e)
         {
-            if (_itemBack.Color != _palette.Surface) { _itemBack.Color = _palette.Surface; }
+            if (_itemBack.Color != _palette.PopupList) { _itemBack.Color = _palette.PopupList; }
             e.Graphics.FillRectangle(_itemBack, e.Bounds);
             if (e.Index < 0 || e.Index >= lstHistory.Items.Count) { return; }
             var item = (DeviceStatusHistoryItem)lstHistory.Items[e.Index];
             string text = item.TimeUtc.ToLocalTime().ToString("HH:mm:ss") + "  " + item.State.ToDisplayText() + "  " + item.Message;
             TextRenderer.DrawText(e.Graphics, text, Font,
                 new Rectangle(e.Bounds.X + 8, e.Bounds.Y, e.Bounds.Width - 8, e.Bounds.Height),
-                StateColor(item.State), _palette.Surface,
+                StateColor(item.State), _palette.PopupList,
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
         }
 
@@ -130,7 +130,7 @@ namespace OmniSight.UI.Controls
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            using (var pen = new Pen(_palette.Edge))
+            using (var pen = new Pen(_palette.PopupBorder))
             {
                 e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
             }

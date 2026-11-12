@@ -21,7 +21,7 @@ namespace OmniSight.UI.Demo
         private readonly Label _legendCaption = new Label();
         private readonly Panel _legendBar = new Panel();
 
-        public DemoSection(DeviceStatusTheme theme, bool large)
+        public DemoSection(UiTheme theme, bool large)
         {
             Theme = theme;
             var palette = new DeviceStatusPalette(theme);
@@ -39,7 +39,7 @@ namespace OmniSight.UI.Demo
             _bar.Dock = DockStyle.Top;
             _bar.Height = barHeight;
             _bar.BackColor = palette.Shell;
-            _title.Text = theme == DeviceStatusTheme.Dark ? "솔레노이드 밸브 검사기 · 다크 테마" : "솔레노이드 밸브 검사기 · 라이트 테마";
+            _title.Text = theme == UiTheme.Dark ? "솔레노이드 밸브 검사기 · 다크 테마" : "솔레노이드 밸브 검사기 · 라이트 테마";
             _title.ForeColor = palette.Text;
             _title.Font = new Font("Segoe UI", large ? 14F : 12F, FontStyle.Bold);
             _title.AutoSize = true;
@@ -83,7 +83,7 @@ namespace OmniSight.UI.Demo
             Disposed += delegate { font.Dispose(); };
         }
 
-        public DeviceStatusTheme Theme { get; }
+        public UiTheme Theme { get; }
         public DeviceStatusStrip Strip { get; }
         public DeviceStatusStrip Legend { get; }
 

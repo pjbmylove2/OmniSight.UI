@@ -36,8 +36,8 @@ namespace OmniSight.UI.Controls
 
         private readonly List<DeviceStatusChip> _chips = new List<DeviceStatusChip>();
         private DeviceStatusRegistry _registry = new DeviceStatusRegistry();
-        private DeviceStatusTheme _theme = DeviceStatusTheme.Dark;
-        private DeviceStatusPalette _palette = new DeviceStatusPalette(DeviceStatusTheme.Dark);
+        private UiTheme _theme = UiTheme.Dark;
+        private DeviceStatusPalette _palette = new DeviceStatusPalette(UiTheme.Dark);
         private int _chipHeight = 28;
         private int _chipSpacing = 8;
         private int _seenVersion = -1;
@@ -65,9 +65,9 @@ namespace OmniSight.UI.Controls
         public event EventHandler<DeviceStatusEventArgs> ReconnectRequested;
 
         [Category("OmniSight")]
-        [DefaultValue(DeviceStatusTheme.Dark)]
+        [DefaultValue(UiTheme.Dark)]
         [Description("다크·라이트 색 프리셋")]
-        public DeviceStatusTheme Theme
+        public UiTheme Theme
         {
             get { return _theme; }
             set

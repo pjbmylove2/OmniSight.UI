@@ -22,7 +22,7 @@ namespace OmniSight.UI.Controls
         private bool _selected;
         private bool _hover;
         private int _angle = 270;
-        private DeviceStatusPalette _palette = new DeviceStatusPalette(DeviceStatusTheme.Dark);
+        private DeviceStatusPalette _palette = new DeviceStatusPalette(UiTheme.Dark);
         private LampResources _resources;
         private readonly SolidBrush _back = new SolidBrush(Color.Black);
         private readonly Pen _border = new Pen(Color.Black);
@@ -146,16 +146,22 @@ namespace OmniSight.UI.Controls
         {
             get
             {
-                if (_selected || _hover || Focused) { return _palette.Accent; }
+                if (_selected) { return _palette.SelectedBorder; }
+                if (_hover || Focused) { return _palette.HoverBorder; }
                 if (_state == DeviceLinkState.Fault || _state == DeviceLinkState.Lost) { return _palette.Error; }
                 return _palette.Edge;
             }
         }
 
+        private Color BackFill
+        {
+            get { return _selected ? _palette.Selected : _hover ? _palette.Hover : _palette.Surface; }
+        }
+
         // 부모 색이 비치지 않도록 전체 영역을 직접 채우고 1px 테두리를 안쪽에 그린다.
         protected override void OnPaintBackground(PaintEventArgs e)
         {
-            Color back = _selected ? _palette.AccentBack : _palette.Surface;
+            Color back = BackFill;
             if (_back.Color != back) { _back.Color = back; }
             Color border = BorderColor;
             if (_border.Color != border) { _border.Color = border; }
