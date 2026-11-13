@@ -12,6 +12,8 @@ namespace OmniSight.UI.Controls
     {
         private const int MaxShownHistory = 5;
         private readonly string _deviceId;
+        private readonly Font _bodyFont = new Font("Segoe UI", 9F);
+        private readonly Font _titleFont = new Font("Segoe UI", 10F, FontStyle.Bold);
         private DeviceStatusPalette _palette;
         private List<DeviceStatusHistoryItem> _history = new List<DeviceStatusHistoryItem>();
         private long _historyKey = -1;
@@ -23,10 +25,12 @@ namespace OmniSight.UI.Controls
 
         public DeviceStatusPopup(DeviceStatusPalette palette, string deviceId, string deviceName)
         {
+            _palette = palette ?? throw new ArgumentNullException(nameof(palette));
             InitializeComponent();
+            lblTitle.Font = _titleFont;
+            Font = _bodyFont;
             _deviceId = deviceId ?? string.Empty;
             lblTitle.Text = deviceName ?? string.Empty;
-            _palette = palette ?? throw new ArgumentNullException(nameof(palette));
             ApplyPalette(palette);
         }
 
@@ -150,12 +154,29 @@ namespace OmniSight.UI.Controls
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposing || IsDisposed || Disposing)
             {
-                if (components != null) { components.Dispose(); }
-                if (_itemBack != null) { _itemBack.Dispose(); _itemBack = null; }
+                base.Dispose(disposing);
+                return;
             }
-            base.Dispose(disposing);
+
+            // Reset the inherited font before the native list box is destroyed.
+            // This releases its GDI font handle on .NET Framework.
+            if (lstHistory != null && lstHistory.IsHandleCreated)
+                ResetFont();
+
+            components?.Dispose();
+            _itemBack?.Dispose();
+            _itemBack = null;
+            try
+            {
+                base.Dispose(true);
+            }
+            finally
+            {
+                _titleFont.Dispose();
+                _bodyFont.Dispose();
+            }
         }
     }
 }
