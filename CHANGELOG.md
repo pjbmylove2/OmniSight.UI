@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+- 데모 시작 화면에 다크·라이트 `CardPanel`과 OK·NG·수동 모드·대기 `ColorLabel` 비교 예제를 추가
+- 카드와 라벨이 시작 화면에서 스크롤 없이 보이는지 검사하는 회귀 테스트 추가
+
 ## 0.8.0
 - `CardPanel` 추가. 둥근 테두리, 3칸 헤더, 자식 컨트롤 배치와 공용 `UiTheme` 지원
 - `ColorLabel` 추가. 상태 배지, 사용자 지정 배경의 자동 대비, `DataGridView`용 `DrawBadge` 지원
