@@ -22,6 +22,11 @@ dotnet build OmniSight.UI.sln -c Release
 ```
 DLL 위치: `src/OmniSight.UI/bin/x64/Release/net472/OmniSight.UI.dll`
 
+## 데모 실행
+
+`samples/OmniSight.UI.Demo/bin/x64/Release/net472/OmniSight.UI.Demo.exe`를 실행한다.
+메인 화면에서 `CardPanel`과 `ColorLabel`을 다크·라이트 테마로 나란히 볼 수 있다. **카드 패널·컬러 라벨 데모**를 누르면 검사 모니터와 컬러 라벨 갤러리를 열 수 있다.
+
 ## 프로젝트에서 참조
 버전별 폴더에 DLL을 배포하고 HintPath로 참조한다.
 ```xml

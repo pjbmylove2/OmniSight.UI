@@ -86,7 +86,9 @@ namespace OmniSight.UI.Demo
             Controls.Add(buttonsDark);
             Controls.Add(_light);
             Controls.Add(_dark);
+            Controls.Add(new CardShowcase());
             Controls.Add(tools);
+            ActiveControl = next;
         }
 
         private void StepStates()

@@ -11,6 +11,8 @@ namespace OmniSight.UI.Demo.Cards
     {
         internal static void RunChecks()
         {
+            CheckMainShowcase();
+
             using (var form = new Form { BackColor = Color.Fuchsia })
             using (var titleFont = new Font("Segoe UI", 18, FontStyle.Bold))
             {
@@ -65,6 +67,34 @@ namespace OmniSight.UI.Demo.Cards
                     Require(ContainsColor(image, Color.Gold), "explicit foreground has priority");
             }
             Console.WriteLine("PASS: CardPanel docking and empty header, ColorLabel themes, auto sizing and custom contrast");
+        }
+
+        private static void CheckMainShowcase()
+        {
+            using (var form = new DemoForm())
+            {
+                ShowOffscreen(form);
+                CardShowcase showcase = null;
+                foreach (Control control in form.Controls)
+                    if (control is CardShowcase cards)
+                        showcase = cards;
+
+                Require(showcase != null && showcase.Visible && form.ClientRectangle.Contains(showcase.Bounds),
+                    "the main demo shows the card showcase without scrolling");
+                for (int index = 0; index < 2; index++)
+                {
+                    UiTheme theme = index == 0 ? UiTheme.Dark : UiTheme.Light;
+                    var card = (CardPanel)showcase.GetControlFromPosition(index, 0).Controls[0];
+                    Require(card.Theme == theme, "each preview card uses its assigned theme");
+                    var badges = card.Controls[0];
+                    Require(badges.Controls.Count == 4, "each preview shows four badge presets");
+                    foreach (ColorLabel badge in badges.Controls)
+                    {
+                        Require(badge.Theme == theme && badge.Visible && badges.ClientRectangle.Contains(badge.Bounds),
+                            "each preview badge is fully visible and matches its card theme");
+                    }
+                }
+            }
         }
 
         internal static void RunCapture(string directory)
