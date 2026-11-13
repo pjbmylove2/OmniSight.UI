@@ -48,7 +48,6 @@ namespace OmniSight.UI.Controls
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Location = new Point(36, 11);
             this.lblTitle.Size = new Size(206, 24);
-            this.lblTitle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             this.lblTitle.AutoEllipsis = true;
             this.lblTitle.TextAlign = ContentAlignment.MiddleLeft;
             this.lblState.Name = "lblState";
@@ -131,7 +130,6 @@ namespace OmniSight.UI.Controls
             this.Controls.Add(this.lamp);
             this.AutoScaleMode = AutoScaleMode.None;
             this.ClientSize = new Size(340, 348);
-            this.Font = new Font("Segoe UI", 9F);
             this.FormBorderStyle = FormBorderStyle.None;
             this.KeyPreview = true;
             this.Name = "DeviceStatusPopup";

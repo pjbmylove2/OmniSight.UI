@@ -11,7 +11,9 @@ namespace OmniSight.UI.Controls
     public sealed partial class DeviceStatusPopup : Form
     {
         private const int MaxShownHistory = 5;
-        private readonly string _deviceId;
+        private string _deviceId;
+        private readonly Font _bodyFont = new Font("Segoe UI", 9F);
+        private readonly Font _titleFont = new Font("Segoe UI", 10F, FontStyle.Bold);
         private DeviceStatusPalette _palette;
         private List<DeviceStatusHistoryItem> _history = new List<DeviceStatusHistoryItem>();
         private long _historyKey = -1;
@@ -23,14 +25,26 @@ namespace OmniSight.UI.Controls
 
         public DeviceStatusPopup(DeviceStatusPalette palette, string deviceId, string deviceName)
         {
-            InitializeComponent();
-            _deviceId = deviceId ?? string.Empty;
-            lblTitle.Text = deviceName ?? string.Empty;
             _palette = palette ?? throw new ArgumentNullException(nameof(palette));
+            InitializeComponent();
+            lblTitle.Font = _titleFont;
+            Font = _bodyFont;
+            SetDevice(deviceId, deviceName);
             ApplyPalette(palette);
         }
 
         public string DeviceId => _deviceId;
+
+        // The strip owns this window and reuses it for each device.
+        internal bool ReuseOnClose { get; set; }
+
+        internal void SetDevice(string deviceId, string deviceName)
+        {
+            _deviceId = deviceId ?? string.Empty;
+            lblTitle.Text = deviceName ?? string.Empty;
+            _historyKey = -1;
+            lstHistory.SelectedIndex = -1;
+        }
 
         /// <summary>재연결 버튼을 눌렀을 때. 실제 재연결은 장치 쪽에서 처리한다.</summary>
         public event EventHandler ReconnectRequested;
@@ -136,6 +150,16 @@ namespace OmniSight.UI.Controls
             }
         }
 
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            if (!e.Cancel && ReuseOnClose && e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                Hide();
+            }
+        }
+
         protected override void OnDeactivate(EventArgs e)
         {
             base.OnDeactivate(e);
@@ -150,12 +174,29 @@ namespace OmniSight.UI.Controls
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposing || IsDisposed || Disposing)
             {
-                if (components != null) { components.Dispose(); }
-                if (_itemBack != null) { _itemBack.Dispose(); _itemBack = null; }
+                base.Dispose(disposing);
+                return;
             }
-            base.Dispose(disposing);
+
+            // Reset the inherited font before the native list box is destroyed.
+            // This releases its GDI font handle on .NET Framework.
+            if (lstHistory != null && lstHistory.IsHandleCreated)
+                ResetFont();
+
+            components?.Dispose();
+            _itemBack?.Dispose();
+            _itemBack = null;
+            try
+            {
+                base.Dispose(true);
+            }
+            finally
+            {
+                _titleFont.Dispose();
+                _bodyFont.Dispose();
+            }
         }
     }
 }

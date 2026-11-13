@@ -228,7 +228,7 @@ namespace OmniSight.UI.Controls
                     chip.Advance(30);
                 }
             }
-            if (_popup != null && !_popup.IsDisposed)
+            if (_popupDeviceId != null && _popup != null && !_popup.IsDisposed)
             {
                 _popup.UpdateInfo(_registry.GetInfo(_popupDeviceId), _registry.GetHistory(_popupDeviceId));
             }
@@ -245,11 +245,19 @@ namespace OmniSight.UI.Controls
             DeviceStatusChip chip = FindChip(id);
             if (chip == null) { throw new ArgumentException("알 수 없는 장치입니다: " + id, nameof(id)); }
             CloseDetail();
-            var popup = new DeviceStatusPopup(_palette, id, chip.DeviceName);
-            popup.ReconnectRequested += PopupReconnectRequested;
-            popup.FormClosed += PopupFormClosed;
+            if (_popup == null || _popup.IsDisposed)
+            {
+                _popup = new DeviceStatusPopup(_palette, id, chip.DeviceName) { ReuseOnClose = true };
+                _popup.ReconnectRequested += PopupReconnectRequested;
+                _popup.VisibleChanged += PopupVisibleChanged;
+            }
+            else
+            {
+                _popup.SetDevice(id, chip.DeviceName);
+            }
+
+            DeviceStatusPopup popup = _popup;
             popup.UpdateInfo(_registry.GetInfo(id), _registry.GetHistory(id));
-            _popup = popup;
             _popupDeviceId = id;
             chip.Selected = true;
 
@@ -264,17 +272,21 @@ namespace OmniSight.UI.Controls
         public void CloseDetail()
         {
             DeviceStatusPopup popup = _popup;
-            if (popup != null && !popup.IsDisposed) { popup.Close(); }
+            if (popup != null && !popup.IsDisposed) { popup.Hide(); }
+            ClearPopupSelection();
         }
 
-        private void PopupFormClosed(object sender, FormClosedEventArgs e)
+        private void PopupVisibleChanged(object sender, EventArgs e)
         {
-            var popup = (DeviceStatusPopup)sender;
-            popup.ReconnectRequested -= PopupReconnectRequested;
-            popup.FormClosed -= PopupFormClosed;
+            if (ReferenceEquals(_popup, sender) && !_popup.Visible)
+                ClearPopupSelection();
+        }
+
+        private void ClearPopupSelection()
+        {
             DeviceStatusChip chip = _popupDeviceId == null ? null : FindChip(_popupDeviceId);
             if (chip != null) { chip.Selected = false; }
-            if (ReferenceEquals(_popup, popup)) { _popup = null; _popupDeviceId = null; }
+            _popupDeviceId = null;
         }
 
         private void PopupReconnectRequested(object sender, EventArgs e)
@@ -458,6 +470,13 @@ namespace OmniSight.UI.Controls
             if (disposing)
             {
                 CloseDetail();
+                if (_popup != null)
+                {
+                    _popup.ReconnectRequested -= PopupReconnectRequested;
+                    _popup.VisibleChanged -= PopupVisibleChanged;
+                    _popup.Dispose();
+                    _popup = null;
+                }
                 if (_timer != null)
                 {
                     _timer.Stop();
