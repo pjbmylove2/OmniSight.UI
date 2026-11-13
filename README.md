@@ -32,7 +32,7 @@ DLL 위치: `src/OmniSight.UI/bin/x64/Release/net472/OmniSight.UI.dll`
 ```xml
 <ItemGroup>
   <Reference Include="OmniSight.UI">
-    <HintPath>경로\OmniSight.UI\0.8.0\net472\OmniSight.UI.dll</HintPath>
+    <HintPath>경로\OmniSight.UI\0.8.1\net472\OmniSight.UI.dll</HintPath>
   </Reference>
 </ItemGroup>
 ```
