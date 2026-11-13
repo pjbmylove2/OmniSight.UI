@@ -11,7 +11,7 @@ namespace OmniSight.UI.Controls
     public sealed partial class DeviceStatusPopup : Form
     {
         private const int MaxShownHistory = 5;
-        private readonly string _deviceId;
+        private string _deviceId;
         private readonly Font _bodyFont = new Font("Segoe UI", 9F);
         private readonly Font _titleFont = new Font("Segoe UI", 10F, FontStyle.Bold);
         private DeviceStatusPalette _palette;
@@ -29,12 +29,22 @@ namespace OmniSight.UI.Controls
             InitializeComponent();
             lblTitle.Font = _titleFont;
             Font = _bodyFont;
-            _deviceId = deviceId ?? string.Empty;
-            lblTitle.Text = deviceName ?? string.Empty;
+            SetDevice(deviceId, deviceName);
             ApplyPalette(palette);
         }
 
         public string DeviceId => _deviceId;
+
+        // The strip owns this window and reuses it for each device.
+        internal bool ReuseOnClose { get; set; }
+
+        internal void SetDevice(string deviceId, string deviceName)
+        {
+            _deviceId = deviceId ?? string.Empty;
+            lblTitle.Text = deviceName ?? string.Empty;
+            _historyKey = -1;
+            lstHistory.SelectedIndex = -1;
+        }
 
         /// <summary>재연결 버튼을 눌렀을 때. 실제 재연결은 장치 쪽에서 처리한다.</summary>
         public event EventHandler ReconnectRequested;
@@ -137,6 +147,16 @@ namespace OmniSight.UI.Controls
             using (var pen = new Pen(_palette.PopupBorder))
             {
                 e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+            }
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            if (!e.Cancel && ReuseOnClose && e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                Hide();
             }
         }
 

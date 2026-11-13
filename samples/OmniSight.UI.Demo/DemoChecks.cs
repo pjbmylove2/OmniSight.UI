@@ -28,6 +28,7 @@ namespace OmniSight.UI.Demo
             CheckRegistryDemotion();
             CheckThreadSafety();
             CheckDesignMode();
+            CheckPopupReuse();
             CheckLeaks();
             Console.WriteLine("PASS: VS2022 palette, chip rendering (6 states x 2 themes), redundant invalidate, registry demotion, thread safety, design mode, leaks");
         }
@@ -275,6 +276,41 @@ namespace OmniSight.UI.Demo
                     }
                     Require(distinct > 10, "design-mode render is not blank");
                 }
+            }
+        }
+
+        private static void CheckPopupReuse()
+        {
+            using (var host = new Form { ShowInTaskbar = false })
+            {
+                var strip = new DeviceStatusStrip();
+                host.Controls.Add(strip);
+                strip.AddDevice("cam1", "CAM 1");
+                strip.AddDevice("cam2", "CAM 2");
+                PrimeHistory(strip);
+                host.Show();
+
+                strip.ShowDetail("cam1");
+                var popup = host.OwnedForms.OfType<DeviceStatusPopup>().Single();
+                var history = (ListBox)popup.Controls["lstHistory"];
+                Require(popup.Visible && popup.DeviceId == "cam1" && history.Items.Count == 0,
+                    "popup opens with the first device and its empty history");
+                popup.Close();
+                Require(!popup.Visible && !popup.IsDisposed, "closing the owned popup keeps it available for reuse");
+
+                strip.Theme = UiTheme.Light;
+                strip.ShowDetail("cam2");
+                Require(ReferenceEquals(popup, host.OwnedForms.OfType<DeviceStatusPopup>().Single())
+                    && popup.Visible && popup.DeviceId == "cam2", "popup is reused for the second device");
+                Require(popup.Controls["lblTitle"].Text == "CAM 2" && history.Items.Count > 0
+                    && Same(popup.BackColor, new DeviceStatusPalette(UiTheme.Light).Popup),
+                    "reused popup shows the current device, history and theme");
+                strip.CloseDetail();
+                Require(!popup.Visible, "CloseDetail hides the popup");
+                strip.ShowDetail("cam1");
+                Require(history.Items.Count == 0, "switching back clears the previous device history");
+                host.Close();
+                Require(popup.IsDisposed, "closing the host disposes the owned popup");
             }
         }
 
