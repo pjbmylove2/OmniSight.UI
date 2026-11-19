@@ -20,6 +20,13 @@ namespace OmniSight.UI.Demo
                     DemoChecks.RunChecks();
                     ButtonChecks.RunChecks();
                     CardChecks.RunChecks();
+                    RangeIndicatorChecks.RunChecks();
+                    InspectionGridChecks.RunChecks();
+                    TrendChartChecks.RunChecks();
+                    TabAndInputChecks.RunChecks();
+                    ItemListChecks.RunChecks();
+                    RoiEditorChecks.RunChecks();
+                    BannerAndSignalChecks.RunChecks();
                     ViewerChecksRunner.RunAll();
                     return 0;
                 }
